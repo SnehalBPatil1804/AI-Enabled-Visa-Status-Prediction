@@ -10,7 +10,7 @@ This module establishes the data foundation for predicting visa processing durat
 
 ### Project Files:
 1. `LCA_Disclosure_Data_FY2026_Q1.xlsx`: Raw input data.
-2. `PreProcessing.ipynb`: Script for cleaning and target generation.
+2. `preprocessing.py`: Script for cleaning and target generation.
 3. `cleaned_visa_data.csv`: Final preprocessed file for the AI model.
 4. `LICENSE`: MIT standard license.
 
