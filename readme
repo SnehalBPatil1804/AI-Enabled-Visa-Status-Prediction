@@ -1,0 +1,128 @@
+# AI Enabled Visa Status Prediction and Processing Time Estimator
+
+End-to-end ML demo for **estimated processing time** (regression) and **case outcome** (binary classification: Certified vs Denied) using LCA-style disclosure fields. Built for Infosys Internship 6.0.
+
+## Features
+
+- **Data pipeline**: loads Excel/CSV from `data/raw/`, maps `RECEIVED_DATE` / `DECISION_DATE` / `VISA_CLASS` / `EMPLOYER_COUNTRY` / `WORKSITE_STATE` / `CASE_STATUS`.
+- **Target**: `processing_days` = decision − submission.
+- **Models**: Linear / Random Forest / Gradient Boosting regression; balanced Logistic / Random Forest classification.
+- **Inference**: segment-aware features using `reports/segment_stats.json` (medians by country and office).
+- **UI**: Streamlit app with charts (Plotly) and a modern dark layout.
+- **API**: FastAPI `/estimate` for integration demos.
+
+## Repository layout
+
+```
+├── app/
+│   ├── main.py          # Streamlit entry
+│   ├── predict.py       # Load models + predict
+│   ├── preprocess.py    # Wrapper around pipeline
+│   ├── utils.py         # Charts + JSON helpers
+│   ├── config.py        # Paths
+│   └── api.py           # FastAPI
+├── src/
+│   ├── data_pipeline.py
+│   ├── eda.py
+│   ├── train.py
+│   └── predict.py       # Legacy re-export
+├── data/
+│   ├── raw/             # Put your Excel/CSV here
+│   ├── processed/       # Generated
+│   └── sample_input.csv # Generated after training
+├── models/              # Trained .joblib (generated)
+├── reports/             # Metrics, charts, segment_stats
+├── notebooks/
+├── screenshots/
+├── requirements.txt
+├── run_all.py
+├── Procfile
+└── .streamlit/config.toml
+```
+
+## Prerequisites
+
+- Python 3.10+ (3.12 tested)
+- Your dataset as **`data/raw/Uncleaned_data.xlsx`** or **`LCA_Disclosure_Data_FY2026_Q1.xlsx`**, or set:
+
+```powershell
+$env:VISA_DATA_FILE="C:\path\to\your\file.xlsx"
+```
+
+## Install & run locally
+
+```powershell
+cd c:\Users\Snehal\Internship_Project_Visa
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+**Train models** (also writes `segment_stats.json`, `model_metrics.json`, `sample_input.csv`):
+
+```powershell
+python src\eda.py
+python src\train.py
+```
+
+Or:
+
+```powershell
+python run_all.py
+```
+
+**Web app** (from project root):
+
+```powershell
+streamlit run app\main.py
+```
+
+Open `http://localhost:8501`.
+
+**REST API**:
+
+```powershell
+uvicorn app.api:app --host 0.0.0.0 --port 8000
+```
+
+Docs: `http://localhost:8000/docs`
+
+## Deployment (Streamlit Community Cloud)
+
+1. Push this repo to GitHub (include `requirements.txt`, `app/main.py`, `.streamlit/config.toml`).
+2. Include `models/*.joblib` and `reports/segment_stats.json` **or** run training in a Cloud build step (advanced).
+3. On [Streamlit Community Cloud](https://streamlit.io/cloud), connect the repo, set main file to **`app/main.py`**, deploy.
+4. Share the public URL with your mentor.
+
+**Note:** Large `.xlsx` files are often gitignored; upload data via Cloud secrets / storage or keep a smaller sample in the repo.
+
+## Environment variables
+
+| Variable | Purpose |
+|----------|---------|
+| `VISA_DATA_FILE` | Full path to input Excel/CSV if not under `data/raw/` |
+| `VISA_CLF_UNDERSAMPLE` | Set to `1` to **undersample the majority class on the training set only** (helps severe imbalance like ~99% Certified). |
+| `VISA_CLF_MAJORITY_RATIO` | Max majority samples = ratio × minority count (default `20`). Used with undersampling. |
+
+## Outputs (mentor demo)
+
+- `reports/model_metrics.json` — regression MAE/RMSE/R²; classification **macro F1**, **balanced accuracy**, **average precision (PR-AUC)**, per-class recall for Denied/Certified, confusion matrix.
+- `reports/*.png` — EDA plots.
+- `reports/segment_stats.json` — medians used at inference.
+- `models/regression_model.joblib`, `models/classification_model.joblib`.
+
+## Limitations
+
+- Predictions are **decision-support only**, not legal advice.
+- Classification needs **labeled** `CASE_STATUS` rows (Certified/Denied-style mapping).
+- Interval width is **capped for display** when raw residual std is very large.
+
+## Future work
+
+- Hyperparameter tuning (Optuna), time-based validation split.
+- SHAP / feature importance in UI.
+- Docker image for reproducible deployment.
+
+## License
+
+MIT (adjust if your repo uses a different license).
